@@ -1,0 +1,332 @@
+# Complete Flaky Lottery System Fix and Full Project Validation
+
+## Role & Objective
+
+You are a senior software engineer tasked with:
+1. Creating a fixed, deterministic version of a flaky marketing lottery system by identifying and eliminating sources of non-determinism
+2. Executing comprehensive validation to ensure the fixed project passes all tests consistently and functions correctly
+
+## Inputs & Context
+
+**Source Project:** `issue_project_flaky/` containing flaky lottery system
+- Location: Buggy marketing lottery system with non-deterministic behavior
+- Problem: Same inputs produce inconsistent outputs, causing random test failures
+- Tests: 13 test cases with 3-4 failing randomly on different runs
+
+**Target Output:** `issue_project_flaky_fixed/` - fixed, deterministic version
+- Create as sibling directory to original
+- All tests must pass consistently across multiple runs
+- Support deterministic testing via seed parameter
+- Allow production randomness when no seed provided
+
+**Reference Documentation:**
+- FIX_PROMPT.md (complete task specification)
+- KNOWN_ISSUE.md (flaky behavior documentation)
+- README.md (business requirements)
+
+## Step-by-Step Instructions
+
+### Phase 1: Analyze and Reproduce Flaky Behavior
+1. Read `README.md` to understand lottery system design and requirements
+2. Review `KNOWN_ISSUE.md` to identify sources of non-determinism
+3. Examine `src/lottery.py` to locate flaky code patterns
+4. Study `tests/test_lottery.py` to understand test expectations
+5. Run tests multiple times (5+ runs) to observe varying pass/fail results
+6. Document which tests fail randomly and under what conditions
+
+### Phase 2: Identify Root Causes of Non-Determinism
+Common flaky patterns to investigate:
+- Module-level `random.random()` calls without seed control
+- Ignored `seed` parameter in `create_lottery(seed=X)` function
+- Set iteration order (sets are unordered in Python < 3.7)
+- Uninitialized or shared state between test runs
+- IP-based rate limiting causing artificial test limitations
+- Prize pool mutations affecting statistical tests
+
+### Phase 3: Create Fixed Project Structure
+Create new directory `issue_project_flaky_fixed/` with structure:
+```
+issue_project_flaky_fixed/
+├── src/
+│   ├── __init__.py
+│   └── lottery.py                   # FIXED (deterministic RNG)
+├── tests/
+│   ├── __init__.py
+│   └── test_lottery.py              # Original tests (unchanged)
+├── demo_stable.py                   # Demo showing consistent behavior
+├── README.md                        # Updated documentation
+├── FIX_REPORT.md                    # Fix documentation
+└── requirements.txt                 # Dependencies
+```
+
+### Phase 4: Implement Deterministic RNG Fix
+Apply the following fixes to `lottery.py`:
+
+**Fix 1: Instance-Level RNG with Seed Support**
+- Replace module-level `random.random()` calls with instance-level RNG
+- Use `self._rng = random.Random(seed)` in `LotterySystem` initialization
+- Modify `create_lottery(seed=X)` to pass seed to `LotterySystem(random_seed=seed)`
+- When seed is provided: deterministic results (same seed = same output)
+- When no seed: production randomness from default initialization
+- Impact: Enables deterministic testing while preserving production randomness
+
+**Fix 2: Deterministic Prize Selection Order**
+- Replace unordered `set` with ordered list for prize types
+- Use deterministic iteration order: `[FIRST, SECOND, THIRD, NONE]`
+- Ensures consistent prize selection across multiple runs
+- Impact: Eliminates randomness from data structure iteration
+
+**Fix 3: User.ip_address Default and IP Check Logic**
+- Change IP default from fixed value to `None`
+- Skip IP quota checks when IP is `None` (not specified)
+- Prevents artificial rate limiting in tests with many synthetic users
+- Impact: Large-sample statistical tests run without artificial constraints
+
+**Fix 4: Prize Pool Immutability During Tests**
+- Prevent `draw()` from mutating shared `PrizePool` in statistical tests
+- Keep `PrizePool.consume()` available for explicit consumption testing
+- Ensures large-sample statistical tests reflect intended probabilities
+- Impact: Statistical assertions pass with correct probability distributions
+
+### Phase 5: Copy and Verify Test Suite
+1. Copy `tests/test_lottery.py` unchanged (tests define correct behavior)
+2. Copy `requirements.txt` unchanged
+3. Verify no test modifications occur
+
+### Phase 6: Create Supporting Documentation and Demo
+1. **demo_stable.py** - Demonstration showing:
+   - Deterministic run with seed (same results on repeated runs)
+   - Non-deterministic run without seed (different results expected)
+   - Example comparing two seeded runs with same seed = identical output
+
+2. **README.md** - Updated documentation:
+   - Mark as fixed, deterministic version
+   - Explain the flaky issues and how they were fixed
+   - Document seed parameter usage
+   - Include usage examples
+
+3. **FIX_REPORT.md** - Comprehensive documentation:
+   - Executive summary of flaky issues found
+   - For each bug:
+     * File and method affected
+     * Root cause of non-determinism
+     * Fix explanation
+     * Code changes made
+   - Test consistency verification:
+     * Results from 5+ consecutive test runs (all "13 passed")
+     * Seed determinism verification (same seed = same output)
+     * Production randomness verification (no seed = varying output)
+   - Verification examples showing before/after behavior
+
+### Phase 7: Verify Test Consistency
+Execute comprehensive test repetition to ensure stability:
+
+**Run 1: Immediate Test Verification**
+- Run full test suite once: `pytest tests/ -q`
+- Expected: "13 passed"
+
+**Run 2-10: Consistency Verification Loop**
+- Run full test suite 10 consecutive times
+- Expected: All 10 runs show "13 passed"
+- Command: `for($i=1; $i -le 10; $i++) { Write-Host "`n=== Run $i ===" -ForegroundColor Green; pytest tests/ -q }`
+- Every single run must pass all tests
+
+**Run 11: Seed Determinism Verification**
+- Create instances with same seed: `create_lottery(seed=12345)`
+- Draw same user from both instances
+- Verify output is identical: `p1 == p2`
+- Expected: Same seed produces identical results
+
+**Run 12: Production Randomness Verification**
+- Create instances without seed
+- Draw same user from multiple instances
+- Verify results differ (randomness preserved)
+- Expected: Varying results on repeated unseeded calls
+
+### Phase 8: Execute Full Project Validation
+Execute comprehensive validation and output capture:
+
+**Validation Task 1: System Launch Verification**
+- Verify project imports without errors
+- Verify all modules load successfully
+- Verify no dependency issues
+- Expected: Clean imports, no exceptions
+
+**Validation Task 2: Run Complete Test Suite (10 times)**
+- Execute: `for($i=1; $i -le 10; $i++) { pytest tests/ -q }`
+- Capture: All output showing test results
+- Verify: Every run shows "13 passed"
+- Expected: 100% consistency across all 10 runs
+
+**Validation Task 3: Execute Demo Script (2 times)**
+- Run: `python demo_stable.py`
+- Run again: `python demo_stable.py`
+- Capture: Demo output showing:
+  - Deterministic run results (identical across runs)
+  - Non-deterministic run results (different across runs)
+- Expected: Seeded runs identical, unseeded runs differ
+
+**Validation Task 4: Verify Seed Determinism**
+- Create script to test seed determinism
+- Run: `python validate_seed.py`
+- Verify: Same seed produces identical results
+- Verify: Different seeds produce different results
+- Expected: Clear evidence of deterministic behavior with seeds
+
+**Validation Task 5: Verify Production Randomness**
+- Confirm unseeded mode produces random results
+- Run demo multiple times without seed
+- Verify results differ between runs
+- Expected: Randomness preserved in production mode
+
+**Validation Task 6: Capture All Outputs and Logs**
+- Document all test run results (13 passed each time)
+- Capture demo script outputs
+- Record seed determinism verification results
+- Document execution times and performance
+- Note any errors or exceptions (should be none)
+
+### Phase 9: Create Comprehensive Validation Summary
+Document findings:
+1. **System Launch Status:** Success ✅
+2. **Test Execution Results:** All 13 tests pass consistently
+3. **Consistency Verification:** 10/10 consecutive runs all passed
+4. **Seed Determinism:** Verified (same seed = same output)
+5. **Production Randomness:** Verified (no seed = random output)
+6. **Error Status:** No errors or exceptions encountered
+7. **Performance:** Acceptable execution times
+8. **Business Logic:** All lottery probabilities and rules working correctly
+
+## Output Specification
+
+**Primary Deliverables:**
+1. Complete `issue_project_flaky_fixed/` directory with all required files
+2. All flaky bugs fixed in `src/lottery.py`
+3. All 13 unit tests passing consistently across 10+ consecutive runs
+4. `FIX_REPORT.md` with comprehensive fix documentation and verification evidence
+5. `demo_stable.py` demonstrating consistent behavior
+6. All validation outputs captured and documented
+
+**Validation Output Requirements:**
+1. Test suite results showing "13 passed" for each of 10 consecutive runs
+2. Demo script output from 2 separate executions showing:
+   - Deterministic run (seeded) with identical results
+   - Non-deterministic run (unseeded) with varying results
+3. Seed determinism verification output showing same seed = same results
+4. All captured terminal outputs and logs
+5. Error traces (if any - should be none)
+
+**Success Confirmation Statement:**
+Final validation summary must explicitly state:
+- "✅ ALL TEST CASES PASSED — 13/13"
+- System launches successfully without errors
+- All automated tests pass consistently across repeated runs
+- Seed determinism verified
+- Production randomness verified
+- Project meets expected functionality
+- Behavior consistent under all test scenarios
+
+## Constraints & Preferences
+
+1. **Determinism Requirements:**
+   - When seed provided: identical results on repeated calls (deterministic)
+   - When no seed: random results varying between calls (production mode)
+   - Both modes must work correctly
+
+2. **Business Logic:**
+   - Maintain same probability calculations
+   - Preserve all lottery mechanics and rules
+   - Do NOT change statistical distributions
+
+3. **API Compatibility:**
+   - Do NOT change class or method names
+   - Do NOT change method signatures
+   - Maintain `create_lottery(seed=X)` contract
+   - Backward compatible with existing code
+
+4. **Test Integrity:**
+   - Do NOT modify test cases
+   - Tests define correct behavior
+   - Fixes must make tests pass consistently
+
+5. **Project Integrity:**
+   - Do NOT modify original `issue_project_flaky/` directory
+   - All work in new `issue_project_flaky_fixed/` directory
+   - Original remains as flaky reference
+
+6. **Validation Requirements:**
+   - Run tests minimum 10 consecutive times
+   - Capture all outputs and logs
+   - Document all error traces (should be none)
+   - Verify both deterministic and random modes
+   - Provide comprehensive summary
+
+## Quality Gates & Completion Checklist
+
+Complete the task only when all of the following are met:
+- [ ] `issue_project_flaky_fixed/` directory created with exact structure
+- [ ] All flaky bugs identified and fixed in `lottery.py`
+- [ ] Test suite passes on Run 1: "13 passed"
+- [ ] Test suite passes consistently on all 10 consecutive runs
+- [ ] Seed determinism verified (same seed = identical results)
+- [ ] Production randomness verified (no seed = varying results)
+- [ ] Code coverage maintained (no new untested code)
+- [ ] `FIX_REPORT.md` completely documents all changes
+- [ ] `demo_stable.py` runs successfully showing consistent behavior
+- [ ] Original `issue_project_flaky/` directory remains untouched
+- [ ] System launches successfully without errors ✅
+- [ ] All automated test cases pass consistently (13/13) ✅
+- [ ] Demo script executes without errors ✅
+- [ ] Project meets expected functionality ✅
+- [ ] Behavior consistent under all test scenarios ✅
+- [ ] All terminal outputs, logs, and error traces captured
+- [ ] Final validation summary explicitly states: "✅ ALL TEST CASES PASSED — 13/13"
+
+## Expected Flaky Bugs to Fix
+
+Based on FIX_PROMPT.md and KNOWN_ISSUE.md:
+
+1. **Module-Level Random Without Seed Control**
+   - Problem: Uses `random.random()` without seed capability
+   - Fix: Use instance `self._rng = random.Random(seed)`
+   - Impact: Enables deterministic testing
+
+2. **Ignored Seed Parameter**
+   - Problem: `create_lottery(seed=X)` doesn't use the seed
+   - Fix: Pass seed to `LotterySystem(random_seed=seed)`
+   - Impact: Seed parameter now honored
+
+3. **Non-Deterministic Prize Selection**
+   - Problem: Set iteration order is non-deterministic
+   - Fix: Use ordered list `[FIRST, SECOND, THIRD, NONE]`
+   - Impact: Consistent prize ordering
+
+4. **IP-Based Rate Limiting in Tests**
+   - Problem: Artificial IP quota limiting test results
+   - Fix: Make IP optional, skip checks when unspecified
+   - Impact: Large-sample tests run without constraints
+
+5. **Prize Pool Mutation**
+   - Problem: Statistical tests fail due to pool depletion
+   - Fix: Prevent `draw()` from mutating shared pool
+   - Impact: Statistical assertions pass with correct probabilities
+
+All flaky behaviors must be fixed for all tests to pass consistently.
+
+---
+
+**CRITICAL EXECUTION REQUIREMENTS:**
+
+Execute all phases sequentially and completely:
+1. Analyze and reproduce the flaky behavior
+2. Identify all sources of non-determinism
+3. Implement all fixes in fixed project
+4. Create documentation and demo
+5. Run tests 10+ consecutive times (all must pass)
+6. Verify seed determinism and production randomness
+7. Execute full validation including demo and seed verification
+8. Capture all outputs and logs
+9. Provide comprehensive final summary with explicit statement: "✅ ALL TEST CASES PASSED — 13/13"
+10. Confirm system launches successfully, all tests pass consistently, project meets expected functionality, and behavior is consistent under all test scenarios
+
+Do not skip any validation steps. Do not reduce the number of test runs. Provide complete documentation of all results.
