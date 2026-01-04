@@ -1,0 +1,264 @@
+# Final Prompt: Fix Flaky Python Marketing Lottery System
+
+## Role & Objective
+
+You are a senior software engineer tasked with fixing a Python marketing lottery system that exhibits flaky/non-deterministic behavior. Your objective is to:
+1. Analyze the existing flaky project structure and understand the bugs
+2. Create a fixed version in a new directory that eliminates all sources of non-determinism
+3. Ensure all 13 tests pass consistently across multiple runs
+4. Perform comprehensive validation to verify the fixes
+5. Deliver complete documentation of changes and verification results
+
+## Inputs & Context
+
+**Source Project Location:**
+- Base path: `C:\BugBash\workSpace3\issue_project_flaky\`
+- Contains flaky implementation with 13 tests (3-4 fail randomly)
+
+**Project Structure:**
+```
+issue_project_flaky/
+├── src/
+│   ├── __init__.py
+│   └── lottery.py                   # Core lottery logic (WITH FLAKY BUGS)
+├── tests/
+│   ├── __init__.py
+│   └── test_lottery.py              # 13 tests (varying pass/fail)
+├── demo_flaky.py
+├── README.md
+├── KNOWN_ISSUE.md
+├── PROJECT_SUMMARY.md
+├── DELIVERY.md
+└── requirements.txt
+```
+
+**Key Bugs to Fix:**
+1. **No Random Seed Initialization** - `LotterySystem.__init__()` doesn't set a random seed
+2. **Ignored Seed Parameter** - `create_lottery(seed)` function accepts seed but never uses it
+3. **Non-Deterministic Prize Iteration** - Uses set for prize type iteration with undefined order
+4. **Global Random State** - Uses module-level `random` without instance-level seed control
+
+## Step-by-Step Instructions
+
+### Phase 1: Analyze the Flaky Project
+1. Read and understand business requirements from `README.md`
+2. Review bug documentation in `KNOWN_ISSUE.md` 
+3. Examine flaky implementation in `src/lottery.py`
+4. Study test cases in `tests/test_lottery.py`
+5. Run tests multiple times to observe varying results:
+   ```powershell
+   for($i=1; $i -le 5; $i++) { 
+       Write-Host "=== Run $i ===" -ForegroundColor Cyan
+       pytest tests/ -v --tb=line
+   }
+   ```
+6. Document observed flakiness patterns
+
+### Phase 2: Create Fixed Version Directory Structure
+Create a completely new project directory: `C:\BugBash\workSpace3\Claude-haiku-4.5\issue_project_flaky_fixed\`
+
+```
+issue_project_flaky_fixed/
+├── src/
+│   ├── __init__.py
+│   └── lottery.py                   # FIXED version (deterministic)
+├── tests/
+│   ├── __init__.py
+│   └── test_lottery.py              # Same tests (all pass consistently)
+├── demo_stable.py                   # Demo showing consistent behavior
+├── README.md                        # Updated documentation
+├── FIX_REPORT.md                    # Comprehensive fix documentation
+└── requirements.txt                 # Same dependencies
+```
+
+### Phase 3: Identify and Fix All Non-Determinism Sources
+1. **Fix Random Seed Control**:
+   - Modify `create_lottery(seed=None)` to pass seed parameter to `LotterySystem` constructor
+   - Update `LotterySystem.__init__()` to accept optional `random_seed` parameter
+   - Initialize instance-level `random.Random()` object with the seed if provided
+   - Use instance `_rng` instead of module-level `random` for all random operations
+
+2. **Fix Prize Type Iteration**:
+   - Change from unordered `set` to ordered `list` for prize types
+   - Ensures consistent order when iterating through prize types
+
+3. **Implement Deterministic Testing Contract**:
+   - Same seed + same input = identical output
+   - No seed = true randomness for production use
+   - Support `create_lottery(seed=X)` parameter contract
+
+### Phase 4: Copy and Fix Source Files
+1. Copy `__init__.py` files (no changes needed)
+2. Copy `tests/test_lottery.py` without modification
+3. Create fixed `src/lottery.py` with:
+   - Instance-level `_rng = random.Random(seed)` 
+   - Pass seed from `create_lottery()` to constructor
+   - Use `self._rng.random()` instead of `random.random()`
+   - Change prize type iteration from set to list
+4. Copy and adapt `demo_flaky.py` → `demo_stable.py`
+5. Copy `requirements.txt` (identical dependencies)
+
+### Phase 5: Fix All Tests Pass Consistently
+1. Ensure all 13 tests pass on first run
+2. Run tests 10+ consecutive times:
+   ```powershell
+   for($i=1; $i -le 10; $i++) { 
+       Write-Host "=== Run $i ===" -ForegroundColor Green
+       pytest tests/ -v
+   }
+   ```
+3. All 10 runs should show "13 passed" ✅
+4. If failures occur: debug, identify root cause, apply fix
+
+### Phase 6: Create Comprehensive Documentation
+Create `FIX_REPORT.md` documenting:
+
+1. **Summary**: Brief overview of flaky issues found
+2. **Root Cause Analysis**: Explanation of why flakiness occurred
+3. **Bugs Fixed**: Detailed list with:
+   - File and function affected
+   - Description of the non-determinism
+   - Code change applied
+   - Before/after code snippets
+4. **Test Consistency Results**: 
+   - Evidence from 5+ consecutive test runs
+   - All showing "13 passed"
+5. **Verification Evidence**:
+   - Seeded behavior (same seed = same results)
+   - Production behavior (no seed = different results)
+   - Example outputs demonstrating consistency
+6. **Validation Checklist**:
+   - New directory created ✅
+   - All files fixed and copied
+   - Tests pass consistently (10/10 runs)
+   - Seeds work correctly
+   - Production randomness maintained
+   - FIX_REPORT.md complete
+   - Demo script shows stable behavior
+
+### Phase 7: Execute Full Validation
+1. **Environment Setup**:
+   - Configure Python environment for the fixed project
+   - Install pytest dependency
+   - Verify Python version ≥ 3.10
+
+2. **Launch Verification**:
+   - Test module imports: `python -c "import src.lottery; print('Import successful')"`
+   - Verify no syntax errors: `python -m py_compile src/lottery.py tests/test_lottery.py demo_stable.py`
+   - Confirm environment dependencies installed
+
+3. **Execute Full Test Suite**:
+   ```powershell
+   # Run complete test suite with verbose output
+   pytest tests/ -v --tb=short
+   ```
+
+4. **Consistency Validation**:
+   ```powershell
+   # Run 10 consecutive test executions
+   for($i=1; $i -le 10; $i++) { 
+       Write-Host "`n=== Test Run $i ===" -ForegroundColor Green
+       pytest tests/ -v
+   }
+   ```
+
+5. **Functional Verification**:
+   - Test seeded deterministic behavior
+   - Test unseeded random behavior
+   - Verify all probability calculations
+   - Test all anti-fraud rules
+   - Execute demo_stable.py script
+
+6. **Error Capture**:
+   - Document any failures with full stack traces
+   - Identify and fix root causes
+   - Re-run tests after fixes
+
+7. **Results Documentation**:
+   - Capture outputs from all test runs
+   - Record any error logs
+   - Document proof that all tests passed
+
+## Output Specification
+
+**Deliverables:**
+1. **Complete Fixed Project Directory**: `C:\BugBash\workSpace3\Claude-haiku-4.5\issue_project_flaky_fixed\`
+   - All source files with fixes applied
+   - Test suite (identical to original)
+   - Demo script showing stable behavior
+   - Updated README.md
+   - FIX_REPORT.md with comprehensive documentation
+
+2. **Validation Evidence**:
+   - Output from 10 consecutive test runs (all showing 13 passed)
+   - Demo script execution results
+   - Functional verification results
+   - Error logs (if any failures occurred during process)
+
+3. **Success Criteria Confirmation**:
+   - All 13 tests pass on every single run
+   - Seed functionality works correctly
+   - Production randomness maintained
+   - Documentation complete and accurate
+
+## Constraints & Preferences
+
+**DO NOT:**
+- Modify any files in the original `issue_project_flaky/` directory
+- Change test cases - they define correct behavior
+- Alter business logic or probability calculations
+- Change public API (class names, method signatures)
+- Add new test cases or remove existing ones
+
+**DO:**
+- Ensure tests are deterministic when seed is provided
+- Allow randomness in production (when no seed provided)
+- Maintain backward compatibility with original API
+- Use clear, descriptive variable names in fixes
+- Include comments explaining seed initialization logic
+- Verify fixes through multiple test runs
+- Document all changes thoroughly
+
+**Technical Specifications:**
+- Target Python version: 3.10+
+- Use `random.Random()` instance for seed control
+- Maintain same import structure and API
+- Ensure 100% test pass rate (13/13 tests consistently)
+- Keep probability calculations unchanged
+- Preserve all anti-fraud business rules
+
+**Quality Standards:**
+- No test failures across 10+ consecutive runs
+- Same seed produces identical results
+- Different seeds produce different but consistent results
+- Demo script executes without errors
+- All code follows original style/conventions
+- Documentation is clear and complete
+
+## Quality Gates
+
+**Completion Checklist:**
+✓ New directory `issue_project_flaky_fixed/` created as sibling to original  
+✓ All source files copied and flaky bugs fixed  
+✓ Run tests 10+ times: all show "13 passed" ✅  
+✓ Seeded behavior verified: same seed = same results  
+✓ Production mode works: no seed = random results  
+✓ FIX_REPORT.md documents all changes with proof  
+✓ Demo script executes successfully showing stable behavior  
+✓ Original `issue_project_flaky/` directory remains completely untouched  
+✓ Python environment configured successfully  
+✓ All imports and syntax verified  
+✓ Functional tests passed (seeded, unseeded, batch operations)  
+✓ No errors or exceptions in any test run  
+✓ Documentation is comprehensive and accurate
+
+**Validation Success Criteria:**
+- 13 passed in every single test run (10+ runs verified)
+- Zero flaky failures observed
+- Deterministic behavior confirmed with seeds
+- Demo script produces consistent output
+- All error logs empty (or documented if expected)
+- Project meets all requirements without modifications
+
+**Final Confirmation:**
+Upon completion, provide explicit statement: **"✅ ALL TEST CASES PASSED - Project validation complete and all quality gates satisfied."**
