@@ -1,0 +1,10 @@
+# Python Dependencies for Marketing Lottery System
+
+# Testing framework
+pytest>=7.4.0
+
+# Test coverage
+pytest-cov>=4.1.0
+
+# No external dependencies needed for core functionality
+# Uses only Python standard library (random, enum, dataclasses, datetime)
