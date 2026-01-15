@@ -1,0 +1,9 @@
+# Python Dependencies for Marketing Lottery System
+
+# Testing framework
+pytest>=7.4.0
+
+# Test coverage
+pytest-cov>=4.1.0
+
+# Core uses only Python standard library
